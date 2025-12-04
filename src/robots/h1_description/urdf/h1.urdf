@@ -626,6 +626,37 @@
     </plugin>
   </gazebo>
 
+  <!-- Odometry Publisher for tracking robot pose -->
+  <gazebo>
+    <plugin filename="libignition-gazebo-odometry-publisher-system.so"
+            name="ignition::gazebo::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>pelvis</robot_base_frame>
+      <odom_topic>/odom</odom_topic>
+      <odom_publish_frequency>50</odom_publish_frequency>
+    </plugin>
+  </gazebo>
+
+  <!-- Pose Publisher for TF -->
+  <gazebo>
+    <plugin filename="libignition-gazebo-pose-publisher-system.so"
+            name="ignition::gazebo::systems::PosePublisher">
+      <publish_link_pose>true</publish_link_pose>
+      <publish_sensor_pose>false</publish_sensor_pose>
+      <publish_collision_pose>false</publish_collision_pose>
+      <publish_visual_pose>false</publish_visual_pose>
+      <publish_nested_model_pose>true</publish_nested_model_pose>
+      <update_frequency>50</update_frequency>
+    </plugin>
+  </gazebo>
+
+  <!-- Apply Force/Torque - allows applying forces to the robot base -->
+  <gazebo>
+    <plugin filename="libignition-gazebo-apply-link-wrench-system.so"
+            name="ignition::gazebo::systems::ApplyLinkWrench">
+    </plugin>
+  </gazebo>
+
   <!-- Joint Position Controller Plugin - allows position control of joints -->
   <gazebo>
     <plugin filename="libignition-gazebo-joint-position-controller-system.so"

@@ -26,6 +26,7 @@ install(PROGRAMS
   scripts/keyboard_teleop.py
   scripts/joystick_teleop.py
   scripts/high_level_control.py
+  scripts/gazebo_sim_controller.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

@@ -13,45 +13,50 @@ from ament_index_python.packages import get_package_share_directory
 from launch import LaunchDescription
 from launch.actions import (
     DeclareLaunchArgument,
-    ExecuteProcess,
     IncludeLaunchDescription,
-    RegisterEventHandler,
     SetEnvironmentVariable,
-    TimerAction,
 )
 from launch.conditions import IfCondition
-from launch.event_handlers import OnProcessExit, OnProcessStart
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import (
-    Command,
-    FindExecutable,
-    LaunchConfiguration,
-    PathJoinSubstitution,
-)
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
-from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
     # Get package directories
-    pkg_h1_description = get_package_share_directory('h1_description')
     pkg_h1_gazebo = get_package_share_directory('h1_gazebo')
     pkg_ros_gz_sim = get_package_share_directory('ros_gz_sim')
     
-    # Paths
-    urdf_file = os.path.join(pkg_h1_description, 'urdf', 'h1.urdf')
-    world_file = os.path.join(pkg_h1_gazebo, 'worlds', 'h1_world.sdf')
-    bridge_config = os.path.join(pkg_h1_gazebo, 'config', 'bridge_config.yaml')
-    rviz_config = os.path.join(pkg_h1_description, 'rviz', 'h1_display.rviz')
+    # Find the workspace root directory
+    # pkg_h1_gazebo is: /path/to/ws/install/h1_gazebo/share/h1_gazebo
+    # We need workspace root: /path/to/ws
+    # Go up: share -> h1_gazebo -> install -> ws
+    share_dir = os.path.dirname(pkg_h1_gazebo)  # share/
+    pkg_install_dir = os.path.dirname(share_dir)  # h1_gazebo/ (in install)
+    install_dir = os.path.dirname(pkg_install_dir)  # install/
+    ws_dir = os.path.dirname(install_dir)  # workspace root
     
-    # Set Gazebo resource path
+    # URDF file from robots/h1_description in src
+    urdf_file = os.path.join(ws_dir, 'src', 'robots', 'h1_description', 'urdf', 'h1.urdf')
+    
+    # Check if file exists, if not raise clear error
+    if not os.path.exists(urdf_file):
+        raise FileNotFoundError(f"URDF file not found: {urdf_file}")
+    
+    world_file = os.path.join(pkg_h1_gazebo, 'worlds', 'h1_world.sdf')
+    rviz_config = os.path.join(pkg_h1_gazebo, 'config', 'h1_display.rviz')
+    
+    # Set Gazebo resource path to find meshes
+    gz_models_path = os.path.join(ws_dir, 'src', 'robots')
+    
     gz_resource_path = SetEnvironmentVariable(
         name='GZ_SIM_RESOURCE_PATH',
-        value=[
-            os.path.join(pkg_h1_description, '..'),
-            ':',
-            os.path.join(pkg_h1_gazebo, 'worlds')
-        ]
+        value=gz_models_path
+    )
+    
+    ign_resource_path = SetEnvironmentVariable(
+        name='IGN_GAZEBO_RESOURCE_PATH',
+        value=gz_models_path
     )
     
     # Declare arguments
@@ -119,13 +124,21 @@ def generate_launch_description():
         output='screen'
     )
     
-    # ROS-Gazebo Bridge for clock
+    # ROS-Gazebo Bridge - bridges topics between Gazebo and ROS 2
     ros_gz_bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         arguments=[
             # Clock bridge
             '/clock@rosgraph_msgs/msg/Clock[ignition.msgs.Clock',
+            # Joint states from Gazebo
+            '/joint_states@sensor_msgs/msg/JointState[ignition.msgs.Model',
+            # IMU sensor
+            '/imu@sensor_msgs/msg/Imu[ignition.msgs.IMU',
+            # Odometry
+            '/odom@nav_msgs/msg/Odometry[ignition.msgs.Odometry',
+            # Command velocity - ROS to Gazebo
+            '/cmd_vel@geometry_msgs/msg/Twist]ignition.msgs.Twist',
         ],
         output='screen',
         parameters=[{
@@ -163,6 +176,7 @@ def generate_launch_description():
     
     return LaunchDescription([
         gz_resource_path,
+        ign_resource_path,
         declare_use_sim_time,
         declare_world,
         declare_rviz,

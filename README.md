@@ -1,188 +1,173 @@
 # Unitree H1 ROS 2 SDK
 
-This repository provides ROS 2 (Humble) support for the Unitree H1 Humanoid Robot, including URDF descriptions, Gazebo simulation, and visualization tools.
+ROS 2 Humble SDK for the Unitree H1 humanoid robot with Gazebo simulation and high-level motion control.
 
-## Overview
+## Features
 
-The Unitree H1 is a high-performance humanoid robot. This SDK provides:
+- **H1 Robot Description**: Complete URDF model with all 19 controllable joints
+- **Gazebo Simulation**: Ignition Gazebo (Fortress) integration with physics simulation
+- **High-Level Control**: Velocity-based motion control with walking modes
+- **Keyboard Teleoperation**: Control the robot with keyboard commands
+- **Joystick Support**: Gamepad/joystick teleoperation
 
-- **h1_description**: Robot URDF model, meshes, and visualization
-- **h1_gazebo**: Gazebo simulation environment and controllers
+## Prerequisites
 
-## Requirements
-
-### System Requirements
-- Ubuntu 22.04 (Jammy)
-- ROS 2 Humble Hawksbill
-- Gazebo Fortress (installed with ros-humble-ros-gz)
-
-### Dependencies
-
-Install the required dependencies:
-
-```bash
-sudo apt update
-sudo apt install -y \
-  ros-humble-robot-state-publisher \
-  ros-humble-joint-state-publisher \
-  ros-humble-joint-state-publisher-gui \
-  ros-humble-xacro \
-  ros-humble-urdf \
-  ros-humble-ros-gz \
-  ros-humble-ros-gz-sim \
-  ros-humble-ros-gz-bridge \
-  ros-humble-ros2-control \
-  ros-humble-ros2-controllers \
-  ros-humble-gz-ros2-control \
-  ros-humble-rviz2
-```
+- Ubuntu 22.04
+- ROS 2 Humble
+- Ignition Gazebo Fortress (`ros-humble-ros-gz`)
 
 ## Installation
 
-### 1. Create a ROS 2 Workspace (if you don't have one)
-
 ```bash
-mkdir -p ~/h1_ws/src
-cd ~/h1_ws/src
-```
+# Clone the repository
+git clone https://github.com/YasiruDEX/unitree-h1-ros-sdk.git
+cd unitree-h1-ros-sdk
 
-### 2. Clone this Repository
-
-```bash
-git clone https://github.com/unitreerobotics/unitree_ros.git
-# Or copy the contents to your workspace
-```
-
-### 3. Build the Workspace
-
-```bash
-cd ~/h1_ws
-source /opt/ros/humble/setup.bash
-colcon build --packages-select h1_description h1_gazebo
-source install/setup.bash
+# Build the workspace
+./ros2_launch.sh build
 ```
 
 ## Usage
 
-### View H1 Robot in RViz2
+### Quick Start - Simplified Launch Script
 
-Launch the robot visualization with joint state publisher GUI:
-
-```bash
-source /opt/ros/humble/setup.bash
-source ~/h1_ws/install/setup.bash
-ros2 launch h1_gazebo h1_rviz.launch.py
-```
-
-This will open RViz2 with the H1 robot model and a GUI to manipulate joint positions.
-
-### Launch H1 in Gazebo Simulation
+The `ros2_launch.sh` script handles all environment setup automatically:
 
 ```bash
-source /opt/ros/humble/setup.bash
-source ~/h1_ws/install/setup.bash
-ros2 launch h1_gazebo h1_gazebo.launch.py
+# Launch Gazebo simulation
+./ros2_launch.sh gazebo
+
+# Launch keyboard teleoperation (in another terminal)
+./ros2_launch.sh teleop
+
+# Launch full simulation with control system
+./ros2_launch.sh full
+
+# Build the workspace
+./ros2_launch.sh build
 ```
 
-#### Launch Arguments
+### Available Commands
 
-| Argument | Default | Description |
-|----------|---------|-------------|
-| `use_sim_time` | `true` | Use simulation clock |
-| `rviz` | `true` | Launch RViz2 alongside Gazebo |
-| `gui` | `true` | Show Gazebo GUI |
-| `world` | `h1_world.sdf` | World file to load |
+| Command | Description |
+|---------|-------------|
+| `./ros2_launch.sh gazebo` | Launch Gazebo simulation with H1 robot |
+| `./ros2_launch.sh gazebo --no-rviz` | Launch without RViz |
+| `./ros2_launch.sh teleop` | Launch keyboard teleoperation |
+| `./ros2_launch.sh control` | Launch high-level control node |
+| `./ros2_launch.sh full` | Launch Gazebo + control + bridge |
+| `./ros2_launch.sh build` | Build the workspace |
+| `./ros2_launch.sh topic list` | List ROS 2 topics |
+| `./ros2_launch.sh node list` | List ROS 2 nodes |
 
-Example with custom arguments:
-```bash
-ros2 launch h1_gazebo h1_gazebo.launch.py rviz:=false
+### Keyboard Teleoperation Controls
+
 ```
+Movement:
+  W/S - Forward/Backward
+  A/D - Strafe Left/Right
+  Q/E - Turn Left/Right
 
-## Robot Description
+Speed Control:
+  Z/X - Increase/Decrease linear speed
+  C/V - Increase/Decrease angular speed
 
-### Joint Configuration
+Mode Control:
+  1 - Idle Mode
+  2 - Walk Mode
+  3 - Trot Gait
+  4 - Running Gait
+  5 - Recovery Mode
 
-The H1 robot has 19 controllable joints:
-
-**Legs (10 joints)**
-- Left leg: `left_hip_yaw_joint`, `left_hip_roll_joint`, `left_hip_pitch_joint`, `left_knee_joint`, `left_ankle_joint`
-- Right leg: `right_hip_yaw_joint`, `right_hip_roll_joint`, `right_hip_pitch_joint`, `right_knee_joint`, `right_ankle_joint`
-
-**Torso (1 joint)**
-- `torso_joint`
-
-**Arms (8 joints)**
-- Left arm: `left_shoulder_pitch_joint`, `left_shoulder_roll_joint`, `left_shoulder_yaw_joint`, `left_elbow_joint`
-- Right arm: `right_shoulder_pitch_joint`, `right_shoulder_roll_joint`, `right_shoulder_yaw_joint`, `right_elbow_joint`
-
-### Sensors
-
-- **IMU**: Located on the torso (`imu_link`)
-- **Cameras**: D435 RGB-D camera, Mid360 LiDAR reference frames
+SPACE - Emergency Stop
+ESC   - Quit
+```
 
 ## Package Structure
 
 ```
 unitree-h1-ros-sdk/
+├── ros2_launch.sh          # Simplified launch script
 ├── src/
-│   ├── robots/
-│   │   └── h1_description/       # Robot description package
-│   │       ├── urdf/             # URDF files
-│   │       ├── meshes/           # 3D mesh files (DAE, STL)
-│   │       ├── launch/           # Launch files
-│   │       └── rviz/             # RViz configuration
-│   └── h1_gazebo/                # Gazebo simulation package
-│       ├── launch/               # Simulation launch files
-│       ├── config/               # Controller configurations
-│       ├── worlds/               # Gazebo world files
-│       └── urdf/                 # Gazebo-specific URDF extensions
-├── README.md
-└── LICENSE
+│   ├── h1_control/         # High-level motion control
+│   │   ├── scripts/
+│   │   │   ├── high_level_control.py    # Main controller
+│   │   │   ├── keyboard_teleop.py       # Keyboard control
+│   │   │   ├── joystick_teleop.py       # Gamepad control
+│   │   │   └── gazebo_sim_controller.py # Gazebo bridge
+│   │   ├── config/
+│   │   │   └── control_params.yaml      # Control parameters
+│   │   └── launch/
+│   │       └── simulation_control.launch.py
+│   │
+│   ├── h1_gazebo/          # Gazebo simulation
+│   │   ├── launch/
+│   │   │   └── h1_gazebo.launch.py
+│   │   ├── worlds/
+│   │   │   └── h1_world.sdf
+│   │   └── config/
+│   │
+│   └── robots/             # Robot descriptions
+│       └── h1_description/
+│           ├── urdf/h1.urdf
+│           └── meshes/
 ```
 
 ## ROS 2 Topics
 
-### Published Topics
+### Subscribed (Control Input)
+- `/cmd_vel` (geometry_msgs/Twist) - Velocity commands
+- `/h1/mode` (std_msgs/Int32) - Robot mode
+- `/h1/gait_type` (std_msgs/Int32) - Gait type
 
-| Topic | Type | Description |
-|-------|------|-------------|
-| `/joint_states` | `sensor_msgs/msg/JointState` | Current joint positions and velocities |
-| `/robot_description` | `std_msgs/msg/String` | URDF robot description |
-| `/tf` | `tf2_msgs/msg/TFMessage` | Transform tree |
-| `/imu/data` | `sensor_msgs/msg/Imu` | IMU sensor data (simulation) |
+### Published (Status)
+- `/h1/robot_state` (std_msgs/String) - Robot state JSON
+- `/joint_states` (sensor_msgs/JointState) - Joint positions
+
+## Robot Modes
+
+| Mode | Name | Description |
+|------|------|-------------|
+| 0 | IDLE | Default standing position |
+| 1 | FORCED_STAND | Lock position |
+| 2 | WALK | Walking locomotion |
+| 3 | STAND_DOWN | Lower to ground |
+| 4 | STAND_UP | Rise to standing |
+| 5 | DAMPING | Compliant mode |
+| 6 | RECOVERY | Recovery from fall |
+
+## Gait Types
+
+| Gait | Name | Description |
+|------|------|-------------|
+| 0 | IDLE | No movement |
+| 1 | TROT | Standard walking |
+| 2 | TROT_RUNNING | Fast walking |
+| 3 | CLIMB_STAIR | Stair climbing |
+| 4 | TROT_OBSTACLE | Obstacle traversal |
 
 ## Troubleshooting
 
-### Common Issues
+### Network Interface Error (CycloneDDS)
 
-1. **Missing mesh files**: Ensure `h1_description` package is properly built and sourced
-2. **Gazebo not starting**: Check if Gazebo Fortress is installed: `gz sim --version`
-3. **RViz model not showing**: Verify the robot_description topic is published: `ros2 topic echo /robot_description`
+If you see errors like "enp7s0: does not match an available interface", the launch script automatically uses FastRTPS middleware to avoid this issue.
 
-### Debug Commands
+### Conda Conflicts
 
+The launch script uses a clean environment to avoid conda Python conflicts with ROS 2.
+
+### Gazebo Not Starting
+
+Ensure you have the Ignition Gazebo packages installed:
 ```bash
-# Check if packages are built
-ros2 pkg list | grep h1
-
-# Check robot description
-ros2 topic echo /robot_description --once
-
-# List available transforms
-ros2 run tf2_ros tf2_echo pelvis left_ankle_link
+sudo apt install ros-humble-ros-gz
 ```
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit pull requests or open issues.
 
 ## License
 
-This project is licensed under the BSD-3-Clause License - see the [LICENSE](LICENSE) file for details.
+Apache License 2.0
 
-## References
+## Acknowledgments
 
-- [Unitree Robotics](https://www.unitree.com/)
-- [Unitree ROS Repository](https://github.com/unitreerobotics/unitree_ros)
-- [ROS 2 Humble Documentation](https://docs.ros.org/en/humble/)
-- [Gazebo Fortress Documentation](https://gazebosim.org/docs/fortress)
+- [Unitree Robotics](https://www.unitree.com/) for the H1 robot
+- [unitree_ros](https://github.com/unitreerobotics/unitree_ros) for original robot descriptions
